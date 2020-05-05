@@ -135,6 +135,4 @@ def chat():
 			speak("I didn't get that, try again.")
 			print(txt)
 
-
-
 chat()
