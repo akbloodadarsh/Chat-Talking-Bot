@@ -1,4 +1,6 @@
 import nltk
+import speech_recognition as sr
+from gtts import gTTS
 from nltk.stem.lancaster import LancasterStemmer
 stemmer = LancasterStemmer()
 
@@ -7,6 +9,25 @@ import tensorflow
 import random
 import json
 import tflearn
+
+def speak(text):
+	tts = gTTS(text=text, lang="en")
+	filename = "voice.mp3"
+	tts.save(filename)
+	playsound.playsound(filename)
+
+def get_audio():
+	r = sr.Recognizer()
+	with sr.Microphone() as source:
+		audio = r.listen(source)
+		said = ""
+
+		try:
+			said = r.recognize_google(audio)
+			print(said)
+		except Exception as e:
+			print("An Exception occured: "+ str(e))
+	return said
 
 with open("intents.json") as file:
 	data = json.load(file)
@@ -95,7 +116,8 @@ def bag_of_words(s,words):
 def chat():
 	print("Start talking with the bot!")
 	while True:
-		inp = input("You: ")
+		print("You: ")
+		inp = input(get_audio())
 		if inp.lower() == "quit":
 			break
 
@@ -109,6 +131,10 @@ def chat():
 					responses = tg['responses']
 
 		else :
-			print("I didn't get that, try again.")
+			txt = "I didn't get that, try again."
+			speak("I didn't get that, try again.")
+			print(txt)
+
+
 
 chat()
