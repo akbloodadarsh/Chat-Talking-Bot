@@ -1,4 +1,5 @@
 import nltk
+import os
 import tkinter 
 import speech_recognition as sr
 from gtts import gTTS
@@ -10,17 +11,22 @@ import tensorflow
 import random
 import json
 from keras.models import load_model
-#import tflearn
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD
-"""
+# This module is imported so that we can play the converted audio 
+from playsound import playsound
 def speak(text):
+	# Passing the text and language to the engine,here we have marked slow=False. 
+	# Which tells the module that the converted audio should have a high speed 
+	speech = gTTS(text = text, lang = 'en', slow = False)
 	tts = gTTS(text=text, lang="en")
-	filename = "voice.mp3"
-	tts.save(filename)
-	playsound.playsound(filename)
+	# Saving the converted audio in mp3 format 
+	speech.save("voice.mp3") 
+	# Playing the converted file 
+	playsound("voice.mp3") 
 
+"""
 def get_audio():
 	r = sr.Recognizer()
 	with sr.Microphone() as source:
@@ -87,7 +93,7 @@ except:
 
 try:
 	model = load_model("model.h5")
-	
+
 except: 
 	model = Sequential()
 	model.add(Dense(128, input_shape=(len(training[0]),), activation='relu'))
@@ -126,10 +132,11 @@ def chat(inp):
 		for tg in data["intents"]:
 			if tg['tag'] == tag:
 				responses = random.choice(tg['responses'])
+				speak(responses)
 				return responses
 	else :
 		txt = "I didn't get that, try again."
-		#speak("I didn't get that, try again.")
+		speak("I didn't get that, try again.")
 		return txt
 
 def send():
