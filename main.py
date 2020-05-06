@@ -24,13 +24,13 @@ def get_audio():
 	with sr.Microphone() as source:
 		audio = r.listen(source)
 		said = ""
-
 		try:
 			said = r.recognize_google(audio)
 			print(said)
 		except Exception as e:
 			print("An Exception occured: "+ str(e))
 	return said
+
 
 with open("intents.json") as file:
 	data = json.load(file)
@@ -121,35 +121,13 @@ def bag_of_words(s,words):
 		for i,w in enumerate(words):
 			if w == se:
 				bag[i] = 1
-
 	return numpy.array(bag)
 
 
-def chat1():
+def chat():
 	print("Start talking with the bot!")
 	while True:
-		print("You: ")
-		inp = input(get_audio())
-		if inp.lower() == "quit":
-			break
-
-		results = model.predict([bag_of_words(inp, words)])[0]
-		results_index = numpy.argmax(results)
-		tag = labels[results_index]
-
-		if results[results_index] > 0.7:
-			for tg in data["intents"]:
-				if tg['tag'] == tag:
-					responses = tg['responses']
-
-		else :
-			txt = "I didn't get that, try again."
-			speak("I didn't get that, try again.")
-			print(txt)
-
-def chat():
-	print("start")
-	while True:
+		#inp = input(get_audio())
 		inp = input("You: ")
 		if inp.lower() == "quit":
 			break
@@ -166,7 +144,7 @@ def chat():
 
 		else :
 			txt = "I didn't get that, try again."
-			speak("I didn't get that, try again.")
+			#speak("I didn't get that, try again.")
 			print(txt)
 
 chat()
