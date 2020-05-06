@@ -13,7 +13,7 @@ import json
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD
-
+"""
 def speak(text):
 	tts = gTTS(text=text, lang="en")
 	filename = "voice.mp3"
@@ -31,7 +31,7 @@ def get_audio():
 		except Exception as e:
 			print("An Exception occured: "+ str(e))
 	return said
-
+"""
 
 with open("intents.json") as file:
 	data = json.load(file)
@@ -84,16 +84,6 @@ except:
 	with open("data.pickle","wb") as f:
 		pickle.dump((words,labels,training,output), f)
 
-
-#tensorflow.reset_default_graph()
-
-#net = tflearn.input_data(shape=[None, len(training[0])])
-#net = tflearn.fully_connected(net, 8)
-#net = tflearn.fully_connected(net, 8)
-#net = tflearn.fully_connected(net, 8)
-#net = tflearn.fully_connected(net, len(output[0]),activation="softmax")
-#net = tflearn.regression(net)
-#model = tflearn.DNN(net)
 model = Sequential()
 model.add(Dense(128, input_shape=(len(training[0]),), activation='relu'))
 model.add(Dropout(0.5))
@@ -108,13 +98,11 @@ model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy
 try:
 	model.load("model.tflearn")
 except: 
-	model.fit(numpy.array(training),numpy.array(output), epochs=200, batch_size=8, verbose=1)
-	#model.fit(training,output,n_epoch=1000, batch_size=8,show_metric=True)
+	model.fit(numpy.array(training),numpy.array(output), epochs=1000, batch_size=8, verbose=1)
 	model.save("model.tflearn")
 
 def bag_of_words(s,words):
 	bag = [0 for _ in range(len(words))]
-
 	s_words = nltk.word_tokenize(s)
 	s_words = [stemmer.stem(word.lower()) for word in s_words]
 
@@ -132,23 +120,22 @@ def chat(inp):
 	results = model.predict(numpy.array([results]))[0]
 	results_index = numpy.argmax(results)
 	tag = labels[results_index]
-
 	if results[results_index] > 0.7:
 		for tg in data["intents"]:
 			if tg['tag'] == tag:
 				responses = random.choice(tg['responses'])
-				msg_list.insert(tkinter.END,responses)
+				return responses
 	else :
 		txt = "I didn't get that, try again."
 		#speak("I didn't get that, try again.")
-		msg_list.insert(tkinter.END,txt)
+		return txt
 
 def send():
 	txt = my_msg.get()
 	msg_list.insert(tkinter.END,txt)
-	chat(txt)
+	msg_list.insert(tkinter.END,chat(txt))
 top = tkinter.Tk()
-top.title("Chatter")
+top.title("Can we just talk!")
 messages_frame = tkinter.Frame(top)
 my_msg = tkinter.StringVar()  # For the messages to be sent.
 #my_msg.set()
