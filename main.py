@@ -3,12 +3,15 @@ import speech_recognition as sr
 from gtts import gTTS
 from nltk.stem.lancaster import LancasterStemmer
 stemmer = LancasterStemmer()
-
+import pickle
 import numpy 
 import tensorflow
 import random
 import json
-import tflearn
+#import tflearn
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Dropout
+from keras.optimizers import SGD
 
 def speak(text):
 	tts = gTTS(text=text, lang="en")
@@ -32,16 +35,15 @@ def get_audio():
 with open("intents.json") as file:
 	data = json.load(file)
 try:
-	with open("data.pickle","rb") as f:
-		words, labels,training,output = pickle.load(f)
-
+	with open("data.pickle","rb") as f: 
+		words,labels,training,output = pickle.load(f)
 except:
 	words = []
 	labels = []
 	docs_x = []
 	docs_y = []
 
-	for intent in  data["intents"]:
+	for intent in data["intents"]:
 		for pattern in intent["patterns"]:
 			wrds = nltk.word_tokenize(pattern)
 			words.extend(wrds)
@@ -60,14 +62,14 @@ except:
 
 	out_empty = [0 for _ in range(len(labels))]
 
-	for x, doc in enumerate(docs_X):
+	for x, doc in enumerate(docs_x):
 		bag=[]
-	wrds = [stemmer.stem(w) for w in doc]
-	for w in words:
-		if w in wrds:
-			bag.append(1)
-		else :
-			bag.append(0)
+		wrds = [stemmer.stem(w) for w in doc]
+		for w in words:
+			if w in wrds:
+				bag.append(1)
+			else:
+				bag.append(0)
 
 		output_row = out_empty[:]
 		output_row[labels.index(docs_y[x])] = 1
@@ -76,31 +78,41 @@ except:
 		output.append(output_row)
 
 	training = numpy.array(training)
-	output = np.array(output)
+	output = numpy.array(output)
 
-	with open("data.pickle","rb") as f:
-		pickle.dump((words, labels,training,output), f)
+	with open("data.pickle","wb") as f:
+		pickle.dump((words,labels,training,output), f)
 
 
-tensorflow.reset_default_graph()
+#tensorflow.reset_default_graph()
 
-net = tflearn.input_data(shape=[None, len(training[0])])
-net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, len(output[0]),activation="softmax")
-net = tflearn.regression(net)
+#net = tflearn.input_data(shape=[None, len(training[0])])
+#net = tflearn.fully_connected(net, 8)
+#net = tflearn.fully_connected(net, 8)
+#net = tflearn.fully_connected(net, 8)
+#net = tflearn.fully_connected(net, len(output[0]),activation="softmax")
+#net = tflearn.regression(net)
+#model = tflearn.DNN(net)
+model = Sequential()
+model.add(Dense(128, input_shape=(len(training[0]),), activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(64, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(len(output[0]), activation='softmax'))
 
-model = tflearn.DNN(net)
+# Compile model. Stochastic gradient descent with Nesterov accelerated gradient gives good results for this model
+sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 try:
 	model.load("model.tflearn")
 except: 
-	model.fit(training,output,n_epoch=1000, batch_size=8,show_metric=True)
+	model.fit(numpy.array(training),numpy.array(output), epochs=200, batch_size=8, verbose=1)
+	#model.fit(training,output,n_epoch=1000, batch_size=8,show_metric=True)
 	model.save("model.tflearn")
 
 def bag_of_words(s,words):
-	bag = []
+	bag = [0 for _ in range(len(words))]
 
 	s_words = nltk.word_tokenize(s)
 	s_words = [stemmer.stem(word.lower()) for word in s_words]
@@ -113,7 +125,7 @@ def bag_of_words(s,words):
 	return numpy.array(bag)
 
 
-def chat():
+def chat1():
 	print("Start talking with the bot!")
 	while True:
 		print("You: ")
@@ -129,6 +141,28 @@ def chat():
 			for tg in data["intents"]:
 				if tg['tag'] == tag:
 					responses = tg['responses']
+
+		else :
+			txt = "I didn't get that, try again."
+			speak("I didn't get that, try again.")
+			print(txt)
+
+def chat():
+	print("start")
+	while True:
+		inp = input("You: ")
+		if inp.lower() == "quit":
+			break
+		results = bag_of_words(inp,words)
+		results = model.predict(numpy.array([results]))[0]
+		results_index = numpy.argmax(results)
+		tag = labels[results_index]
+
+		if results[results_index] > 0.7:
+			for tg in data["intents"]:
+				if tg['tag'] == tag:
+					responses = random.choice(tg['responses'])
+					print(responses)
 
 		else :
 			txt = "I didn't get that, try again."
