@@ -1,4 +1,5 @@
 import nltk
+import tkinter 
 import speech_recognition as sr
 from gtts import gTTS
 from nltk.stem.lancaster import LancasterStemmer
@@ -124,27 +125,43 @@ def bag_of_words(s,words):
 	return numpy.array(bag)
 
 
-def chat():
-	print("Start talking with the bot!")
-	while True:
-		#inp = input(get_audio())
-		inp = input("You: ")
-		if inp.lower() == "quit":
-			break
-		results = bag_of_words(inp,words)
-		results = model.predict(numpy.array([results]))[0]
-		results_index = numpy.argmax(results)
-		tag = labels[results_index]
+def chat(inp):
+	#inp = input(get_audio())
+	inp = inp.lower()
+	results = bag_of_words(inp,words)
+	results = model.predict(numpy.array([results]))[0]
+	results_index = numpy.argmax(results)
+	tag = labels[results_index]
 
-		if results[results_index] > 0.7:
-			for tg in data["intents"]:
-				if tg['tag'] == tag:
-					responses = random.choice(tg['responses'])
-					print(responses)
+	if results[results_index] > 0.7:
+		for tg in data["intents"]:
+			if tg['tag'] == tag:
+				responses = random.choice(tg['responses'])
+				msg_list.insert(tkinter.END,responses)
+	else :
+		txt = "I didn't get that, try again."
+		#speak("I didn't get that, try again.")
+		msg_list.insert(tkinter.END,txt)
 
-		else :
-			txt = "I didn't get that, try again."
-			#speak("I didn't get that, try again.")
-			print(txt)
-
-chat()
+def send():
+	txt = my_msg.get()
+	msg_list.insert(tkinter.END,txt)
+	chat(txt)
+top = tkinter.Tk()
+top.title("Chatter")
+messages_frame = tkinter.Frame(top)
+my_msg = tkinter.StringVar()  # For the messages to be sent.
+#my_msg.set()
+scrollbar = tkinter.Scrollbar(messages_frame)  # To navigate through past messages.
+# Following will contain the messages.
+msg_list = tkinter.Listbox(messages_frame, height=15, width=50, yscrollcommand=scrollbar.set)
+scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
+msg_list.pack()
+messages_frame.pack()
+entry_field = tkinter.Entry(top, textvariable=my_msg)
+entry_field.bind("<Return>", send)
+entry_field.pack()
+send_button = tkinter.Button(top, text="Send", command=send)
+send_button.pack()
+tkinter.mainloop()
