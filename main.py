@@ -9,6 +9,7 @@ import numpy
 import tensorflow
 import random
 import json
+from keras.models import load_model
 #import tflearn
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
@@ -84,22 +85,23 @@ except:
 	with open("data.pickle","wb") as f:
 		pickle.dump((words,labels,training,output), f)
 
-model = Sequential()
-model.add(Dense(128, input_shape=(len(training[0]),), activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(64, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(len(output[0]), activation='softmax'))
-
-# Compile model. Stochastic gradient descent with Nesterov accelerated gradient gives good results for this model
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-
 try:
-	model.load("model.tflearn")
+	model = load_model("model.h5")
+	
 except: 
+	model = Sequential()
+	model.add(Dense(128, input_shape=(len(training[0]),), activation='relu'))
+	model.add(Dropout(0.5))
+	model.add(Dense(64, activation='relu'))
+	model.add(Dropout(0.5))
+	model.add(Dense(len(output[0]), activation='softmax'))
+
+	# Compile model. Stochastic gradient descent with Nesterov accelerated gradient gives good results for this model
+	sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+	model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+
 	model.fit(numpy.array(training),numpy.array(output), epochs=1000, batch_size=8, verbose=1)
-	model.save("model.tflearn")
+	model.save("model.h5")
 
 def bag_of_words(s,words):
 	bag = [0 for _ in range(len(words))]
